@@ -3,63 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구구단 게임</title>
+    <title>구구단을 외자</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            text-align: center;
+            background-color: #f9f9f9;
             margin: 0;
             padding: 0;
-            background-color: #f0f0f0;
+            text-align: center;
         }
+
         h1 {
             margin-top: 20px;
+            color: #4CAF50;
         }
+
         #timer {
             font-size: 24px;
             margin-top: 20px;
         }
+
         #question {
             font-size: 30px;
             margin-top: 30px;
         }
+
         input[type="number"], input[type="text"] {
             font-size: 18px;
             padding: 5px;
             margin-top: 10px;
         }
+
         button {
             font-size: 18px;
             padding: 10px 20px;
             margin-top: 10px;
             cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
         }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
         #score {
             font-size: 20px;
             margin-top: 20px;
         }
-        #rankings {
-            margin-top: 20px;
-            text-align: left;
+
+        /* 순위 화면 스타일 */
+        #rankingsScreen {
+            display: none;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
         }
+
+        #rankings {
+            font-size: 18px;
+            text-align: left;
+            margin: 0 auto;
+            width: 80%;
+        }
+
+        #rankings h2 {
+            text-align: center;
+            color: #4CAF50;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+        }
+
+        td {
+            padding: 10px;
+        }
+
+        .rank-item {
+            background-color: #f9f9f9;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .rank-item:nth-child(even) {
+            background-color: #f1f1f1;
+        }
+
+        .rank-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* 게임 화면 스타일 */
+        #gameScreen, #endScreen, #startScreen {
+            display: none;
+        }
+
+        /* 버튼 그룹 */
         .button-group {
             margin-top: 20px;
         }
+
         .button-group button {
             margin: 5px;
-        }
-        #gameScreen {
-            display: none; /* 게임 화면은 처음에 숨김 */
-        }
-        #endScreen {
-            display: none; /* 게임 종료 화면도 처음에 숨김 */
         }
     </style>
 </head>
 <body>
-    <h1>구구단 게임</h1>
+    <h1>구구단 외워라.</h1>
 
-    <!-- 첫 번째 화면 (문제 수 선택) -->
+    <!-- 첫 번째 화면 (문제 수 선택 및 순위 보기) -->
     <div id="startScreen">
         <div class="button-group">
             <!-- 문제 수 선택 버튼 -->
@@ -68,6 +138,15 @@
             <button id="btn30">30문제</button>
             <button id="btn50">50문제</button>
         </div>
+
+        <button id="viewRankings">순위 보기</button> <!-- 순위 보기 버튼 추가 -->
+    </div>
+
+    <!-- 순위 화면 -->
+    <div id="rankingsScreen">
+        <h2>순위</h2>
+        <div id="rankings"></div>
+        <button id="backToStart">메인 화면으로 돌아가기</button> <!-- 메인 화면으로 돌아가기 버튼 추가 -->
     </div>
 
     <!-- 두 번째 화면 (문제 풀이 화면) -->
@@ -88,11 +167,16 @@
         <label for="playerName">이름: </label>
         <input type="text" id="playerName" placeholder="이름을 입력하세요" required>
         <button id="saveScore">점수 저장</button>
-
-        <div id="rankings"></div> <!-- 순위 표시 -->
+        <button id="showRankingsAfterSave">순위 보기</button> <!-- 점수 저장 후 순위 보기 버튼 추가 -->
+        <button id="backToStartFromEnd">메인 화면으로 돌아가기</button> <!-- 메인 화면으로 돌아가기 버튼 추가 -->
     </div>
 
     <script>
+        // 페이지 로딩 시 startScreen이 보이도록 설정
+        window.onload = function() {
+            document.getElementById("startScreen").style.display = "block";
+        };
+
         let startTime = null;
         let timerInterval = null;
         let timeElapsed = 0;
@@ -181,37 +265,76 @@
 
         // 순위 표시 함수
         function showRankings(scores) {
-            let rankingsHTML = "<h2>순위</h2><ol>";
+            let rankingsHTML = "<table><thead><tr><th>순위</th><th>이름</th><th>점수</th><th>시간</th></tr></thead><tbody>";
             scores.forEach((score, index) => {
-                rankingsHTML += `<li>순위 ${index + 1}: ${score.name} - 점수: ${score.score}, 시간: ${score.time}초, ${score.date}</li>`;
+                rankingsHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${score.name}</td>
+                        <td>${score.score}</td>
+                        <td>${score.time}초</td>
+                    </tr>
+                `;
             });
-            rankingsHTML += "</ol>";
+            rankingsHTML += "</tbody></table>";
             document.getElementById("rankings").innerHTML = rankingsHTML;
+            document.getElementById("rankingsScreen").style.display = "block";
+            document.getElementById("startScreen").style.display = "none";
         }
+
+        // 버튼 이벤트 핸들러
+        document.getElementById("btn10").addEventListener("click", function() {
+            totalQuestions = 10;
+            startGame();
+        });
+        document.getElementById("btn20").addEventListener("click", function() {
+            totalQuestions = 20;
+            startGame();
+        });
+        document.getElementById("btn30").addEventListener("click", function() {
+            totalQuestions = 30;
+            startGame();
+        });
+        document.getElementById("btn50").addEventListener("click", function() {
+            totalQuestions = 50;
+            startGame();
+        });
+
+        // 순위 보기 버튼 클릭 시 순위 화면 표시
+        document.getElementById("viewRankings").addEventListener("click", function() {
+            const scores = JSON.parse(localStorage.getItem("scores")) || [];
+            showRankings(scores);
+        });
+
+        // 메인 화면으로 돌아가기 버튼 처리
+        document.getElementById("backToStart").addEventListener("click", function() {
+            document.getElementById("rankingsScreen").style.display = "none";
+            document.getElementById("startScreen").style.display = "block";
+        });
+
+        document.getElementById("backToStartFromEnd").addEventListener("click", function() {
+            document.getElementById("endScreen").style.display = "none";
+            document.getElementById("startScreen").style.display = "block";
+        });
+
+        // 점수 저장 후 순위 보기 버튼 처리
+        document.getElementById("saveScore").addEventListener("click", saveScore);
+        document.getElementById("showRankingsAfterSave").addEventListener("click", function() {
+            const scores = JSON.parse(localStorage.getItem("scores")) || [];
+            showRankings(scores);
+        });
 
         // 게임 시작 함수
         function startGame() {
             correctAnswers = 0;
             questionsAnswered = 0;
-            timeElapsed = 0;
             document.getElementById("score").textContent = "맞은 문제 수: " + correctAnswers;
-
-            // 화면 전환: 문제 화면 보이기
-            document.getElementById("startScreen").style.display = "none";
+            document.getElementById("timer").textContent = "시간: 0초";
             document.getElementById("gameScreen").style.display = "block";
-
-            startTimer();
-            askQuestion();
+            document.getElementById("startScreen").style.display = "none";
+            startTimer(); // 타이머 시작
+            askQuestion(); // 첫 번째 문제 출제
         }
-
-        // 문제 수 버튼 클릭 시 문제 수 설정 및 게임 시작
-        document.getElementById("btn10").onclick = function() { totalQuestions = 10; startGame(); };
-        document.getElementById("btn20").onclick = function() { totalQuestions = 20; startGame(); };
-        document.getElementById("btn30").onclick = function() { totalQuestions = 30; startGame(); };
-        document.getElementById("btn50").onclick = function() { totalQuestions = 50; startGame(); };
-
-        // 점수 저장 버튼 클릭 시 점수 저장
-        document.getElementById("saveScore").onclick = saveScore;
     </script>
 </body>
 </html>
